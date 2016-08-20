@@ -4,7 +4,7 @@ JumonMaker
 拙作 Java 版 FukkatsuNoJumonBuilder の kotlin 移植です。  
 このプログラムはSATOH_Yoshiyuki氏が公開されている「復活の呪文」資料室の情報を元に作成されました。
 
-ドラゴンクエストはスクエアエニックス社の登録商標です。  
+ドラゴンクエストはスクウェア・エニックス社の登録商標です。  
 
 使い方
 ------
@@ -31,6 +31,29 @@ JumonMaker
                 slashedGolem = false,
                 cryptoCode = 1)
     }
+
+すべての引数は省略可能です。  
+
+    fun hoge() {
+        // ゴールドカンストでスタート状態
+        val jumon = JumonMaker().make(
+                name = "かねもち",
+                gold = 65535)
+    }
+    
+    fun hani() {
+        // 最強装備、EXP、Goldカンストでスタート状態
+        val jumon = JumonMaker().make(
+                name = "さいつよ",
+                exp = 65535,
+                gold = 65535,
+                weapon = 7, // ロトのつるぎ
+                armor = 7,  // ロトのよろい
+                shield = 3, // みかがみのたて
+                herb = 6,
+                key = 6)
+    }
+
 
 パラメータの解説
 ----------------
