@@ -1,5 +1,7 @@
 package org.grim3lt.tool.jumonmaker
 
+import org.grim3lt.tool.jumonmaker.exception.IllegalParameterException
+
 class JumonMaker {
     private val GOLD_LIMIT = 0xffff
     private val EXP_LIMIT = 0xffff
@@ -18,6 +20,13 @@ class JumonMaker {
             "る" to 50, "れ" to 51, "ろ" to 52, "わ" to 53, "を" to 54,
             "ん" to 55, "っ" to 56, "ゃ" to 57, "ゅ" to 58, "ょ" to 59,
             "゛" to 60, "゜" to 61, "−" to 62, "　" to 63)
+
+    private val DAKUON_MAP = mapOf(
+            "が" to "か゛", "ぎ" to "き゛", "ぐ" to "く゛", "げ" to "け゛", "ご" to "こ゛",
+            "ざ" to "さ゛", "じ" to "し゛", "ず" to "す゛", "ぜ" to "せ゛", "ぞ" to "そ゛",
+            "だ" to "た゛", "ぢ" to "ち゛", "づ" to "つ゛", "で" to "て゛", "ど" to "と゛",
+            "ば" to "は゛", "び" to "ひ゛", "ぶ" to "ふ゛", "べ" to "へ゛", "ぼ" to "ほ゛",
+            "ぱ" to "は゜", "ぴ" to "ひ゜", "ぷ" to "ふ゜", "ぺ" to "へ゜", "ぽ" to "ほ゜")
 
     private val JUMON_MAP = mapOf(
              0 to "あ",  1 to "い",  2 to "う",  3 to "え",  4 to "お",
@@ -84,31 +93,45 @@ class JumonMaker {
         return doEncode()
     }
 
+    private fun prepareName(name: String): String {
+        var result = ""
+        name.forEach {
+            result += DAKUON_MAP[it.toString()] ?:
+                    if (NAME_MAP.containsKey(it.toString())) {
+                        it.toString()
+                    } else {
+                        throw IllegalParameterException("Does not found character.: [$it]")
+                    }
+        }
+        return result.plus("　　　　").substring(0..3)
+    }
+
     private fun setName(name: String) {
-        when (name.length) {
+        val nameVal = prepareName(name)
+        when (nameVal.length) {
             4 -> {
-                data[7] = data[7] or NAME_MAP[name.substring(3, 4)]!!
-                data[12] = data[12] or NAME_MAP[name.substring(2, 3)]!!
-                data[1] = data[1] or (NAME_MAP[name.substring(1, 2)]!! shl 1)
-                data[9] = data[9] or (NAME_MAP[name.substring(0, 1)]!! shl 2)
+                data[7] = data[7] or NAME_MAP[nameVal.substring(3, 4)]!!
+                data[12] = data[12] or NAME_MAP[nameVal.substring(2, 3)]!!
+                data[1] = data[1] or (NAME_MAP[nameVal.substring(1, 2)]!! shl 1)
+                data[9] = data[9] or (NAME_MAP[nameVal.substring(0, 1)]!! shl 2)
             }
 
             3 -> {
-                data[12] = data[12] or NAME_MAP[name.substring(2, 3)]!!
-                data[1] = data[1] or (NAME_MAP[name.substring(1, 2)]!! shl 1)
-                data[9] = data[9] or (NAME_MAP[name.substring(0, 1)]!! shl 2)
+                data[12] = data[12] or NAME_MAP[nameVal.substring(2, 3)]!!
+                data[1] = data[1] or (NAME_MAP[nameVal.substring(1, 2)]!! shl 1)
+                data[9] = data[9] or (NAME_MAP[nameVal.substring(0, 1)]!! shl 2)
             }
 
             2 -> {
-                data[1] = data[1] or (NAME_MAP[name.substring(1, 2)]!! shl 1)
-                data[9] = data[9] or (NAME_MAP[name.substring(0, 1)]!! shl 2)
+                data[1] = data[1] or (NAME_MAP[nameVal.substring(1, 2)]!! shl 1)
+                data[9] = data[9] or (NAME_MAP[nameVal.substring(0, 1)]!! shl 2)
             }
 
             1 -> {
-                data[9] = data[9] or (NAME_MAP[name.substring(0, 1)]!! shl 2)
+                data[9] = data[9] or (NAME_MAP[nameVal.substring(0, 1)]!! shl 2)
             }
 
-            else -> throw UnsupportedOperationException()
+            else -> throw IllegalParameterException("Illegal name. :[$name]")
         }
     }
 
@@ -149,7 +172,7 @@ class JumonMaker {
         }
 
         if (items.isEmpty() || items.size != 8) {
-            throw UnsupportedOperationException()
+            throw IllegalParameterException("Illegal Items.: [$items]")
         }
         data[0] = items.doConvert(1, 0)
         data[11] = items.doConvert(3, 2)
@@ -168,23 +191,27 @@ class JumonMaker {
     }
 
     private fun setGold(gold: Int) {
-        val goldVal: Int = gold and GOLD_LIMIT
+        if (gold > GOLD_LIMIT) {
+            throw IllegalParameterException("Gold overflowed. [$gold]")
+        }
 
         // Goldの上位2バイトを格納
-        data[5] = (goldVal shr 8) and 0xff
+        data[5] = (gold shr 8) and 0xff
 
         // Goldの下位2バイトを格納
-        data[10] = goldVal and 0xff
+        data[10] = gold and 0xff
     }
 
     private fun setExp(exp: Int) {
-        val expVal: Int = exp and EXP_LIMIT
+        if (exp > EXP_LIMIT) {
+            throw IllegalParameterException("EXP overflowed. :[$exp]")
+        }
 
         // 経験値の上位2バイトを格納
-        data[2] = (expVal shr 8) and 0xff
+        data[2] = (exp shr 8) and 0xff
 
         // 経験値の下位2バイトを格納
-        data[13] = expVal and 0xff
+        data[13] = exp and 0xff
     }
 
     private fun setCRC() {
@@ -198,23 +225,22 @@ class JumonMaker {
     }
 
     private fun setCryptoCode(cryptoCode: Int) {
-        fun Int.maskEqual(expression:Int): Boolean {
-            return this and expression == expression
-        }
+        fun Int.maskAndEqual(expression:Int) =
+                this and expression == expression
 
-        if (cryptoCode.maskEqual(0x01)) {
+        if (cryptoCode.maskAndEqual(0x01)) {
             data[7] = data[7] or 0x80
-        } else if (cryptoCode.maskEqual(0x02)) {
+        } else if (cryptoCode.maskAndEqual(0x02)) {
             data[9] = data[9] or 0x01
-        } else if (cryptoCode.maskEqual(0x04)) {
+        } else if (cryptoCode.maskAndEqual(0x04)) {
             data[12] = data[12] or 0x80
         } else {
-            throw UnsupportedOperationException()
+            throw IllegalParameterException("Illegal crypto code. :[$cryptoCode]")
         }
     }
 
     private fun doExchange() {
-        var j:Int = 0
+        var j = 0
         for(i in 14 downTo 0 step 3) {
             // 8bitコードを6bitコードに変換する。
             val work:Int = (data[i - 2] shl 16) or (data[i - 1] shl 8) or data[i]
@@ -225,7 +251,7 @@ class JumonMaker {
         }
 
         // ひらがなの対比表に変換する。
-        var work:Int = 0
+        var work = 0
         for (i in 0..code.size - 1) {
             work = (code[i] + work + 4) and 0x3f
             code[i] = work
@@ -233,9 +259,10 @@ class JumonMaker {
     }
 
     private fun doEncode(): String {
-        var result: String = ""
-        for (element in code) {
-            result += JUMON_MAP[element]!!
+        var result = ""
+        code.forEach {
+            result += JUMON_MAP[it] ?:
+                    throw RuntimeException("Does not exist the code. :[$it]")
         }
         return result
     }
