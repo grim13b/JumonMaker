@@ -10,7 +10,6 @@ class JumonMakerTest {
         assertEquals(expended, actual)
     }
 
-
     @Test
     fun successfulCreationHero() {
         val fukkatsuNoJumon = JumonMaker().make(
