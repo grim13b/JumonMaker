@@ -2,7 +2,10 @@ group 'org.grim3lt.tool'
 version '16.08.1'
 
 buildscript {
-    ext.kotlin_version = '1.0.3'
+    ext {
+        kotlin_version = '1.0.3'
+        mavenRepository = './maven'
+    }
 
     repositories {
         mavenCentral()
@@ -14,6 +17,7 @@ buildscript {
 
 apply plugin: 'java'
 apply plugin: 'kotlin'
+apply plugin: 'maven'
 
 sourceCompatibility = 1.8
 
@@ -24,4 +28,22 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri(mavenRepository))
+            pom.project {
+                licenses {
+                    license {
+                        name 'The MIT License (MIT)'
+                        url 'https://raw.githubusercontent.com/grim13b/JumonMaker/master/LICENSE'
+                        distribution 'repo'
+                    }
+                }
+            }
+        }
+
+    }
 }
